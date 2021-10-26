@@ -19,9 +19,9 @@ class Funtions:
         return np.random.uniform(min, max, [row, col])
 
     # MEDOTO PARA OBTENER LA FUNCION SOMA
-    def DistanciaEuclidiana(self, matrizEntradas, matrizBasesRadiales):
+    def DistanciaEuclidiana(self, entradas, matrizBasesRadiales):
         distanciasEuclidianas = []
-        for entradas, basesRadiales in zip(matrizEntradas, matrizBasesRadiales):
+        for basesRadiales in matrizBasesRadiales:
             sumatoria = []
             for entrada, baseRadial in zip(entradas, basesRadiales):
                 sumatoria.append(pow((entrada - baseRadial), 2))

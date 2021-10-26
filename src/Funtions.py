@@ -1,6 +1,7 @@
 
 from random import uniform
 from tkinter import filedialog
+from math import exp, log, sqrt
 import numpy as np
 import openpyxl
 import pandas as pd
@@ -18,45 +19,52 @@ class Funtions:
         return np.random.uniform(min, max, [row, col])
 
     # MEDOTO PARA OBTENER LA FUNCION SOMA
-    def FuncionSoma(self, entradas, pesos, umbrales):
-        salidaSoma = []
-        for i in range(len(pesos[0])):
-            sumatoria = 0
-            for j in range(len(pesos)):
-                sumatoria += entradas[j] * pesos[j][i]
-            salidaSoma.append(sumatoria - umbrales[i])
-        return salidaSoma
+    def DistanciaEuclidiana(self, matrizEntradas, matrizBasesRadiales):
+        distanciasEuclidianas = []
+        for entradas, basesRadiales in zip(matrizEntradas, matrizBasesRadiales):
+            sumatoria = []
+            for entrada, baseRadial in zip(entradas, basesRadiales):
+                sumatoria.append(pow((entrada - baseRadial), 2))
+            distanciasEuclidianas.append(pow(sum(sumatoria), 0.5))
+        return distanciasEuclidianas
 
     # METODO PARA OBTENER LA FUNCION SIGMOIDE
-    def FuncionSigmoide(self, salidaSoma):
-        yr = []
-        for x in salidaSoma:
-            yr.append(1 / (1 + np.exp(-x)))
-        return yr
+    def FuncionBaseRadial(self, distanciasEuclidianas):
+        funcionActivacion = []
+        for distanciaEuclidiana in distanciasEuclidianas:
+            funcionActivacion.append(pow(distanciaEuclidiana, 2) * log(distanciaEuclidiana))
+        return funcionActivacion
+    
+    # METODO PARA OBTENER LA FUNCION GAUSSIANA
+    def FuncionGaussiana(self, distanciasEuclidianas):
+        funcionActivacion = []
+        for distanciaEuclidiana in distanciasEuclidianas:
+            funcionActivacion.append(exp(-pow(distanciaEuclidiana, 2)))
+        return funcionActivacion
 
     # METODO PARA OBTENER LA FUNCION TANGENTE HIPERBOLICA
-    def FuncionTangenteHiperbolica(self, salidaSoma):
-        yr = []
-        for x in salidaSoma:
-            yr.append((np.exp(x) - np.exp(-x)) / (np.exp(x) + np.exp(-x)))
-        return yr
+    def FuncionMulticuadratica(self, distanciasEuclidianas):
+        funcionActivacion = []
+        for distanciaEuclidiana in distanciasEuclidianas:
+            funcionActivacion.append(sqrt(1 + pow(distanciaEuclidiana, 2)))
+        return funcionActivacion
 
     # METODO PARA OBTENER LA FUNCION GAUSSIANA
-    def FuncionGaussiana(self, salidaSoma, desviacion=1):
-        yr = []
-        for x in salidaSoma:
-            yr.append(np.exp(-x**2/2*desviacion**2))
-        return yr
+    def FuncionMulticuadraticaInversa(self, distanciasEuclidianas):
+        funcionActivacion = []
+        for distanciaEuclidiana in distanciasEuclidianas:
+            funcionActivacion.append(1 / sqrt(1 + pow(distanciaEuclidiana, 2)))
+        return funcionActivacion
 
-    # NOMBRE DE LA FUNCION SALIDA
-    def FuncionSalida(self, funcionSalida, salidaSoma):
+    # NOMBRE DE LA FUNCION ACTIVACION
+    def FuncionActivacion(self, funcionActivacion, distanciasEuclidianas):
         switcher = {
-            'BASE RADIAL': salidaSoma,
-            'MULTICUADRATICA': self.FuncionSigmoide(salidaSoma),
-            'GAUSSIANA': self.FuncionGaussiana(salidaSoma, 1),
-            'MC INVERSA': self.FuncionTangenteHiperbolica(salidaSoma),
+            'BASE RADIAL': self.FuncionBaseRadial(distanciasEuclidianas),
+            'GAUSSIANA': self.FuncionGaussiana(distanciasEuclidianas),
+            'MULTICUADRATICA': self.FuncionMulticuadratica(distanciasEuclidianas),
+            'MC INVERSA': self.FuncionMulticuadraticaInversa(distanciasEuclidianas),
         }
-        return switcher.get(funcionSalida, "ERROR")
+        return switcher.get(funcionActivacion, "ERROR")
 
     # METODO PARA OBTENER EL ERROR LINAL
     def ErrorLineal(self, salidas, salidaSoma):
@@ -158,5 +166,4 @@ if __name__ == '__main__':
     # a = np.array([[1, 2], [3, 4]])
     # b = np.array([[5], [6]])
     # print(np.concatenate((a, b), axis=1))
-    print(np.array([[5, 6, 4], [4, 7, 8]]).max())
-    print(np.array([[5, 6, 1], [4, 7, 8]]).min())
+    print(log(5))

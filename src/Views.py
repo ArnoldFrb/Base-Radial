@@ -177,13 +177,6 @@ class Views:
         style.configure(treeView, rowheight=100, highlightthickness=0, bd=0)  
         treeView.place(relheight=1, relwidth=1)
 
-    # AGREGAR CAPAS OCULTAS
-    def AgregarCapas(self, capa, neuronas, funcActivacion):
-        encabezado = ['Capa', 'Neuronas', 'Func Activacion']
-        self.entrenar.Config.append([capa, neuronas, funcActivacion])
-        
-        return pd.DataFrame(data=self.entrenar.Config, columns=encabezado)
-
     def Graficar(self, frame, data):
         fig = Figure(figsize=(5, 4), dpi=100)
         if np.array(data).ndim == 2:

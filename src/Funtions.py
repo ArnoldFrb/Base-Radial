@@ -7,6 +7,7 @@ import openpyxl
 import pandas as pd
 import os
 import errno
+from scipy.interpolate import interp2d
 
 class Funtions:
 
@@ -29,52 +30,76 @@ class Funtions:
         return distanciasEuclidianas
 
     # METODO PARA OBTENER LA FUNCION SIGMOIDE
-    def FuncionBaseRadial(self, distanciasEuclidianas):
-        funcionActivacion = []
-        for distanciaEuclidiana in distanciasEuclidianas:
-            funcionActivacion.append(pow(distanciaEuclidiana, 2) * log(distanciaEuclidiana))
-        return funcionActivacion
-    
+    def FuncionBaseRadial(self, matrizDistanciasEuclidianas):
+        funcionesActivacion = []
+        for distanciasEuclidianas in matrizDistanciasEuclidianas:
+            funcionActivacion = []
+            for distanciaEuclidiana in distanciasEuclidianas:
+                funcionActivacion.append(pow(distanciaEuclidiana, 2) * log(distanciaEuclidiana))
+            funcionesActivacion.append(funcionActivacion)
+        return funcionesActivacion
+
     # METODO PARA OBTENER LA FUNCION GAUSSIANA
-    def FuncionGaussiana(self, distanciasEuclidianas):
-        funcionActivacion = []
-        for distanciaEuclidiana in distanciasEuclidianas:
-            funcionActivacion.append(exp(-pow(distanciaEuclidiana, 2)))
-        return funcionActivacion
+    def FuncionGaussiana(self, matrizDistanciasEuclidianas):
+        funcionesActivacion = []
+        for distanciasEuclidianas in matrizDistanciasEuclidianas:
+            funcionActivacion = []
+            for distanciaEuclidiana in distanciasEuclidianas:
+                funcionActivacion.append(exp(-pow(distanciaEuclidiana, 2)))
+            funcionesActivacion.append(funcionActivacion)
+        return funcionesActivacion
 
     # METODO PARA OBTENER LA FUNCION TANGENTE HIPERBOLICA
-    def FuncionMulticuadratica(self, distanciasEuclidianas):
-        funcionActivacion = []
-        for distanciaEuclidiana in distanciasEuclidianas:
-            funcionActivacion.append(sqrt(1 + pow(distanciaEuclidiana, 2)))
-        return funcionActivacion
+    def FuncionMulticuadratica(self, matrizDistanciasEuclidianas):
+        funcionesActivacion = []
+        for distanciasEuclidianas in matrizDistanciasEuclidianas:
+            funcionActivacion = []
+            for distanciaEuclidiana in distanciasEuclidianas:
+                funcionActivacion.append(sqrt(1 + pow(distanciaEuclidiana, 2)))
+            funcionesActivacion.append(funcionActivacion)
+        return funcionesActivacion
 
     # METODO PARA OBTENER LA FUNCION GAUSSIANA
-    def FuncionMulticuadraticaInversa(self, distanciasEuclidianas):
-        funcionActivacion = []
-        for distanciaEuclidiana in distanciasEuclidianas:
-            funcionActivacion.append(1 / sqrt(1 + pow(distanciaEuclidiana, 2)))
-        return funcionActivacion
+    def FuncionMulticuadraticaInversa(self, matrizDistanciasEuclidianas):
+        funcionesActivacion = []
+        for distanciasEuclidianas in matrizDistanciasEuclidianas:
+            funcionActivacion = []
+            for distanciaEuclidiana in distanciasEuclidianas:
+                funcionActivacion.append(1 / sqrt(1 + pow(distanciaEuclidiana, 2)))
+            funcionesActivacion.append(funcionActivacion)
+        return funcionesActivacion
+
+    def CalcularSalida(self, funcionesActivacion, interp):
+        salida = []
+        for funcionActivacion in funcionesActivacion:
+            sumatoria = []
+            for fa, ip in zip(funcionActivacion, interp):
+                sumatoria.append(fa*ip[0])
+            salida.append(sum(sumatoria))
+        return salida
+                
 
     # NOMBRE DE LA FUNCION ACTIVACION
     def FuncionActivacion(self, funcionActivacion, distanciasEuclidianas):
         switcher = {
-            'BASE RADIAL': self.FuncionBaseRadial(distanciasEuclidianas),
+            'BASERADIAL': self.FuncionBaseRadial(distanciasEuclidianas),
             'GAUSSIANA': self.FuncionGaussiana(distanciasEuclidianas),
             'MULTICUADRATICA': self.FuncionMulticuadratica(distanciasEuclidianas),
-            'MC INVERSA': self.FuncionMulticuadraticaInversa(distanciasEuclidianas),
+            'MC_INVERSA': self.FuncionMulticuadraticaInversa(distanciasEuclidianas),
         }
         return switcher.get(funcionActivacion, "ERROR")
 
     # METODO PARA OBTENER EL ERROR LINAL
-    def ErrorLineal(self, salidas, salidaSoma):
+    def ErrorLineal(self, salidas, _salida):
         error = []
-        for salida, soma in zip(salidas, salidaSoma):
-            error.append(salida - soma)
-        return error
+        entrenamiento = []
+        for salida, _salida in zip(salidas, _salida):
+            entrenamiento.append([salida[0], _salida])
+            error.append(salida[0] - _salida)
+        return (error, entrenamiento)
 
     # METODO PARA OBTENER EL ERROR PATRON
-    def ErrorPatron(self, errorLineal):
+    def ErrorG(self, errorLineal):
         error = 0
         for salida in errorLineal:
             error += np.abs(salida)
@@ -116,7 +141,7 @@ class Funtions:
             entradas.append([fila[i] for fila in matriz.to_numpy()]) if 'X' in matriz.columns[i] else salidas.append([fila[i] for fila in matriz.to_numpy()])
 
         matrizBaseRadiales = []
-        funcionActivacion = 'BASE RADIAL'
+        funcionActivacion = 'BASERADIAL'
         neuronas = int(uniform(1, 9))
         error = 0.001
 
@@ -131,7 +156,7 @@ class Funtions:
     def GuardarResultados(self, ejercicio, entrenamiento, entradas, salidas, basesRadiales, funcionSalida, error, neuronas):
         
         dfMatrix = pd.DataFrame(np.concatenate((np.array(entradas), np.array(salidas)), axis=1), columns=['X' + str(x+1) for x in range(len(entradas[0]))] + ['YD' + str(x+1) for x in range(len(salidas[0]))])
-        dfBasesRadiales = pd.DataFrame(basesRadiales, columns=['BR1', 'BR2'])
+        dfBasesRadiales = pd.DataFrame(basesRadiales, columns=['BR' + str(x+1) for x in range(len(basesRadiales[0]))])
         dfConfig = pd.DataFrame([[funcionSalida, error, neuronas]], columns=['Func Activacion', 'Error Maximo', 'Neuronas'])
 
         try:
@@ -166,4 +191,9 @@ if __name__ == '__main__':
     # a = np.array([[1, 2], [3, 4]])
     # b = np.array([[5], [6]])
     # print(np.concatenate((a, b), axis=1))
-    print(log(5))
+    x = [[1, -0.08, -0.16], [1, -0.08, -0.08], [1, 0.03, 0.34], [1, -0.16, -0.08]]
+    y = [[1], [1], [0], [0]]
+    print(np.linalg.lstsq(np.array(x), np.array(y), rcond=-1)[0])
+    x = [[ 1, -0.0866434, -0.16182117], [ 1, -0.0866434, -0.0866434 ], [ 1,  0.03220683, 0.3486618 ], [ 1, -0.16182117, -0.0866434 ]]
+    print(np.linalg.lstsq(np.array(x), np.array(y), rcond=-1)[0])
+    

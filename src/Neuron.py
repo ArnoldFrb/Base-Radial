@@ -1,9 +1,7 @@
-from numpy import array, zeros
-from copy import deepcopy
+from numpy import linalg, append
+from pandas.core.frame import DataFrame
 from Funtions import Funtions
-import matplotlib.pyplot as plt
 import tkinter as tk
-from tkinter import messagebox as MessageBox
 import tkinter.ttk as ttk
 
 class Neuron:
@@ -15,14 +13,25 @@ class Neuron:
         self.Entradas = entradas
         self.Salidas = salidas
         self.BasesRadiales = basesRadiales
+        self.vsErrores = [[0.1, 0.1]]
 
-    def Entrenar(self, error_maximo, funcionSalida, frame):
+    def Entrenar(self, error_maximo, funcionActivacion):
 
-        ###################################
-        frameBarra = tk.Frame(frame, width=470, height=50, background="#fafafa")
-        frameBarra.place(relx=.15, rely=0)
-        barra = ttk.Progressbar(frameBarra, maximum=100)
-        barra.place(relx=.01, rely=.05, width=460)
-        #####################################
+        distanciasEuclidianas = []
+        for entradas in self.Entradas:
+            distanciasEuclidianas.append(self.functions.DistanciaEuclidiana(entradas, self.BasesRadiales))
 
-        return
+        activacion = self.functions.FuncionActivacion(funcionActivacion, distanciasEuclidianas)
+        matriz = [[1], [1], [1], [1]]
+        matriz = append(matriz, activacion, axis=1)
+        interp = linalg.lstsq(matriz, self.Salidas, rcond=-1)[0]
+        
+        salidas = self.functions.CalcularSalida(matriz, interp)
+
+        (errorLineal, entrenamiento) = self.functions.ErrorLineal(self.Salidas, salidas)
+
+        errorG = self.functions.ErrorG(errorLineal)
+
+        self.vsErrores.append([error_maximo, errorG])
+
+        return (errorG <= error_maximo, entrenamiento, self.vsErrores, DataFrame(matriz), errorG)

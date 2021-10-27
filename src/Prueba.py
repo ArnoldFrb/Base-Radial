@@ -1,40 +1,17 @@
-# METODO PARA OBTENER LA FUNCION ESCALON DE HEAVISIDE
-def FunciónEscalonHeaviside(salidaSoma):
-    yr = []
-    for x in salidaSoma:
-        yr.append(1 if x >= 0 else 0)
-    return yr
+from scipy.interpolate import interp1d
+import numpy as np
 
+a = np.array([[1, -0.08, -0.16], [1, -0.08, -0.08], [1, 0.03, 0.34], [1, -0.16, -0.08]])
 
-# METODO PARA OBTENER LA FUNCION RAMPA
-def FuncionRampa(self, salidaSoma, entrada, rampa):
-    yr = []
-    for x in salidaSoma:
-        yr.append(-1 if x < -1 else 1 if x >
-                  1 else entrada if rampa else x)
-    return yr
+x = np.array(range(a.shape[0]))
 
+# define new x range, we need 7 equally spaced values
+xnew = np.linspace(3)
 
-# METODO PARA OBTENER LA FUNCION LINEAL
-def FuncionLineal(self, salidaSoma):
-    yr = salidaSoma
-    return yr
+# apply the interpolation to each column
+f = interp1d(x, a, axis=0)
 
+print(f)
 
-# METODO PARA OBTENER LA FUNCION SIGNO
-def FuncionSigno(self, salidaSoma):
-    yr = []
-    for x in salidaSoma:
-        yr.append(-1 if x < 0 else 1 if x > 0 else 0)
-
-
-def FuncionSalida(self, funcionSalida, salidaSoma, entrada, rampa):
-    switcher = {
-        'ESCALON': self.FunciónEscalonHeaviside(salidaSoma),
-        'LINEAL': self.FuncionLineal(salidaSoma),
-        'SIGMOIDE': self.FuncionSigmoide(salidaSoma),
-        'RAMPA': self.FuncionRampa(salidaSoma, entrada, rampa)
-    }
-    return switcher.get(funcionSalida, "ERROR")
-
-# Tener en cuenta que hay dos algoritmos de entrenamiento regla delta y regla delta modificada
+# get final result
+print(f(xnew))

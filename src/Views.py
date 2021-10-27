@@ -4,8 +4,11 @@ import tkinter.ttk as ttk
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from numpy import array
+from pandas.core.frame import DataFrame
 from Funtions import *
 from Neuron import Neuron
+from tkinter import messagebox as MessageBox
 
 class Views:
 
@@ -20,10 +23,10 @@ class Views:
         self.capa = 1
         self.config = Funtions()
 
-        frameMain = tk.Frame(master=self.wind, width=1100, height=600, background="#e3e3e3")
-        frameMain.place(relx=.0, rely=.0)
+        self.frameMain = tk.Frame(master=self.wind, width=1100, height=600, background="#e3e3e3")
+        self.frameMain.place(relx=.0, rely=.0)
 
-        self.frameConfig = tk.Frame(frameMain, width=450, height=50, background="#fafafa")
+        self.frameConfig = tk.Frame(self.frameMain, width=450, height=50, background="#fafafa")
         self.frameConfig.place(relx=.01, rely=.02)
 
         # FRAME PARA VISUALIZAR LA CONFIGURACION DE LA NEURONAL
@@ -48,7 +51,7 @@ class Views:
         self.btnInicializar.place(relx=.75, rely=.4)
 
         # FRAME PARA VISUALIZAR ENTRADAS, SALIDAS Y PATRONES
-        self.frameConfigInicial = tk.Frame(frameMain, width=450, height=60, background="#fafafa")
+        self.frameConfigInicial = tk.Frame(self.frameMain, width=450, height=60, background="#fafafa")
         self.frameConfigInicial.place(relx=.01, rely=.115)
 
         tk.Label(self.frameConfigInicial, text="CONFIG ENTRENAMIENTO", bg="#fafafa").place(relx=.34, rely=.01)
@@ -57,50 +60,60 @@ class Views:
         tk.Label(self.frameConfigInicial, text="PATRONES", bg="#fafafa").place(relx=.4, rely=.35)
 
         self.cobBoxFuncionSalida = ttk.Combobox(self.frameConfigInicial)
-        self.cobBoxFuncionSalida["values"] = ['BASE RADIAL', 'GAUSSIANA', 'MULTICUADRATICA', 'MC INVERSA']
+        self.cobBoxFuncionSalida["values"] = ['BASERADIAL', 'GAUSSIANA', 'MULTICUADRATICA', 'MC_INVERSA']
         self.cobBoxFuncionSalida.place(relx=.63, rely=.35)
-        self.cobBoxFuncionSalida.insert(0, "BASE RADIAL")
+        self.cobBoxFuncionSalida.insert(0, "BASERADIAL")
 
         # FRAME PARA VISUALIZAR LA MATRIZ DE DATOS
-        self.frameData = tk.Frame(frameMain, background="#fafafa")
+        self.frameData = tk.Frame(self.frameMain, background="#fafafa")
         self.frameData.place(relx=.01, rely=.227, width=450, height=194)
 
         # FRAME PARA CONFIGURACION DE LA SIMULACION
-        self.frameConfigSimulacion = tk.Frame(frameMain, width=450, height=249, background="#fafafa")
+        self.frameConfigSimulacion = tk.Frame(self.frameMain, width=450, height=249, background="#fafafa")
         self.frameConfigSimulacion.place(relx=.01, rely=.564)
 
-        tk.Label(self.frameConfigSimulacion, text="SIMULACION", bg="#fafafa").place(relx=.02, rely=.01)
+        tk.Label(self.frameConfigSimulacion, text="MATRIZ INTERPOLACION", bg="#fafafa").place(relx=.02, rely=.01)
 
-        self.btnDataSimulacion = tk.Button(self.frameConfigSimulacion, text="Cargar Data", state=tk.DISABLED, command= self.Event_btnData,
-         relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2)
-        self.btnDataSimulacion.place(relx=.70, rely=.01)
+        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=219, background="#fafafa")
+        self.frameSimulacionMatriz_1.place(relx=0, rely=.12)
 
-        self.btnSimular = tk.Button(self.frameConfigSimulacion, text="Simular", state=tk.DISABLED, command= self.Event_btnData,
-         relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2)
-        self.btnSimular.place(relx=.875, rely=.01)
+        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=219, background="#fafafa")
+        self.frameSimulacionMatriz_2.place(relx=.735, rely=.12)
 
-        self.frameSimulacionTabla = tk.Frame(self.frameConfigSimulacion, width=450, height=219, background="#fafafa")
-        self.frameSimulacionTabla.place(relx=0, rely=.12)
-
-        self.frameEntrenar = tk.Frame(frameMain, width=620, height=50, background="#fafafa")
+        self.frameEntrenar = tk.Frame(self.frameMain, width=620, height=50, background="#fafafa")
         self.frameEntrenar.place(relx=.426, rely=.02)
+
+        self.frameBarra = tk.Frame(self.frameEntrenar, width=470, height=50, background="#fafafa")
+        self.frameBarra.place(relx=.15, rely=0)
+        self.barra = ttk.Progressbar(self.frameBarra, mode="indeterminate")
+        self.barra.place(relx=.01, rely=.05, width=460)
+
+        self.lblNeuronas = tk.StringVar(value='Neuronas: 0')
+        lbNeuronas = tk.Label(self.frameBarra, bg="#fafafa")
+        lbNeuronas.place(relx=.15, rely=.6)
+        lbNeuronas.config(textvariable=self.lblNeuronas)
+        
+        self.lblErrorG = tk.StringVar(value='Error G: 0')
+        lberrorG = tk.Label(self.frameBarra, bg="#fafafa")
+        lberrorG.place(relx=.65, rely=.6)
+        lberrorG.config(textvariable=self.lblErrorG)
 
         self.btnEntrenar = tk.Button(self.frameEntrenar, text="Entrenar", state=tk.DISABLED, command= self.Event_btnEntrenar,
          relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2)
         self.btnEntrenar.place(relx=.01, rely=.4)
 
-        self.btnDetener = tk.Button(self.frameEntrenar, text="Detener", state=tk.DISABLED, command= self.Event_btnDetener,
+        self.btnGuardar = tk.Button(self.frameEntrenar, text="Guardar", state=tk.DISABLED, command= self.Event_btnGuardar,
          relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2, border=0)
-        self.btnDetener.place(relx=.92, rely=.035)
+        self.btnGuardar.place(relx=.92, rely=.035)
 
         self.btnLimpiar = tk.Button(self.frameEntrenar, text="Limpiar", state=tk.DISABLED, command= self.Event_btnLimpiar,
          relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2, border=0)
         self.btnLimpiar.place(relx=.92, rely=.515)
 
-        self.frameEntranamiento = tk.Frame(frameMain, width=620, height=228, background="#fafafa")
+        self.frameEntranamiento = tk.Frame(self.frameMain, width=620, height=228, background="#fafafa")
         self.frameEntranamiento.place(relx=.426, rely=.115)
 
-        self.frameSimulacion = tk.Frame(frameMain, width=620, height=283, background="#fafafa")
+        self.frameSimulacion = tk.Frame(self.frameMain, width=620, height=283, background="#fafafa")
         self.frameSimulacion.place(relx=.426, rely=.506)
 
     def Event_btnData(self):
@@ -136,28 +149,76 @@ class Views:
             len(self.entrenar.Entradas[0])
             )
         self.btnEntrenar['state'] = tk.NORMAL
-
-    def Event_btnEntrenar(self):
         self.btnData['state'] = tk.DISABLED
         self.btnInicializar['state'] = tk.DISABLED
+
+    def Event_btnEntrenar(self):
+
+        self.barra.start()
+        self.btnData['state'] = tk.DISABLED
         self.btnEntrenar['state'] = tk.DISABLED
-        self.btnDetener['state'] = tk.NORMAL
         self.btnLimpiar['state'] = tk.DISABLED
 
-        self.entrenar.Entrenar(float(self.entErrorMaximo.get()), self.cobBoxFuncionSalida.get(), self.frameEntrenar)
-        # self.Graficar(self.frameEntranamiento, grafica)
+        (flag, entrenamiento, vsErrores, interp, errorG) = self.entrenar.Entrenar(float(self.entErrorMaximo.get()), self.cobBoxFuncionSalida.get())
+
+        treeView = ttk.Treeview(self.frameSimulacionMatriz_1)
+        self.CrearGrid(treeView, self.frameSimulacionMatriz_1)
+        self.LlenarTabla(treeView, interp)
+
+        treeView = ttk.Treeview(self.frameSimulacionMatriz_2)
+        self.CrearGrid(treeView, self.frameSimulacionMatriz_2)
+        self.LlenarTabla(treeView, DataFrame(self.entrenar.Salidas))
+
+        self.lblNeuronas.set('Neuronas: ' + str(len(self.entrenar.BasesRadiales)))
+        self.lblErrorG.set('Error G: 0' + str(round(errorG, 7)))
+
+        self.Graficar(self.frameEntranamiento, entrenamiento)
+        self.Graficar(self.frameSimulacion, vsErrores, False)
+        
+        self.barra.stop()
+
+        self.btnInicializar['state'] = tk.NORMAL
+
+        if flag:
+            MessageBox.showinfo('EXITO!!!', 'Entrenamiento Exitoso.')
+            self.btnInicializar['state'] = tk.DISABLED
+            self.btnGuardar['state'] = tk.NORMAL
+        else:
+            MessageBox.showinfo('ERROR!!!', 'Entrenamiento Fallido.')
+            self.entNeuronas.insert(0, int(self.entNeuronas.get()) + 1)
+            self.entNeuronas.delete(1, tk.END)
+            self.btnInicializar['state'] = tk.NORMAL
         
         self.btnLimpiar['state'] = tk.NORMAL
-        self.btnDetener['state'] = tk.DISABLED
 
-    def Event_btnDetener(self):
-        self.entrenar.flag = True
+    def Event_btnGuardar(self):
+        if MessageBox.askokcancel("Entramiento Exitoso.", "¿Desea guardar el entrenamiento?"):
+            self.config.GuardarResultados(self.entrenar.Ejercicio, 'out', self.entrenar.Entradas, self.entrenar.Salidas, 
+                                    self.entrenar.BasesRadiales, self.cobBoxFuncionSalida.get(), self.entErrorMaximo.get(), self.entNeuronas.get()
+                                )
+            MessageBox.showinfo('EXITO!', 'Se ha guardado el entranmiento sastifactoriamente.')
+        
+        self.btnGuardar['state'] = tk.DISABLED
 
     def Event_btnLimpiar(self):
+        self.btnGuardar['state'] = tk.DISABLED
         self.entrenar.BasesRadiales = []
+        self.entrenar.vsErrores = [[0.1, 0.1]]
         self.btnLimpiar['state'] = tk.DISABLED
         self.btnData['state'] = tk.NORMAL
         self.btnInicializar['state'] = tk.NORMAL
+
+        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=219, background="#fafafa")
+        self.frameSimulacionMatriz_1.place(relx=0, rely=.12)
+
+        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=219, background="#fafafa")
+        self.frameSimulacionMatriz_2.place(relx=.735, rely=.12)
+
+        self.frameEntranamiento = tk.Frame(self.frameMain, width=620, height=228, background="#fafafa")
+        self.frameEntranamiento.place(relx=.426, rely=.115)
+
+        self.frameSimulacion = tk.Frame(self.frameMain, width=620, height=283, background="#fafafa")
+        self.frameSimulacion.place(relx=.426, rely=.506)
 
     def LlenarTabla(self, treeView, Matriz):
         treeView.delete(*treeView.get_children())
@@ -177,12 +238,12 @@ class Views:
         style.configure(treeView, rowheight=100, highlightthickness=0, bd=0)  
         treeView.place(relheight=1, relwidth=1)
 
-    def Graficar(self, frame, data):
+    def Graficar(self, frame, data, flag=True):
         fig = Figure(figsize=(5, 4), dpi=100)
-        if np.array(data).ndim == 2:
+        if flag:
             fig.add_subplot(111).plot([fila[0] for fila in data], 'o', [fila[1] for fila in data], '^')
         else:
-            fig.add_subplot(111).plot(data, 'o')
+            fig.add_subplot(111).plot([fila[0] for fila in data], '-',  [fila[1] for fila in data], '--')
 
         canvas = FigureCanvasTkAgg(fig, master=frame)
         canvas.draw()

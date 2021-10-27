@@ -1,25 +1,22 @@
 
 from random import uniform
-from tkinter import filedialog
 from math import exp, log, sqrt
 import numpy as np
 import openpyxl
 import pandas as pd
 import os
 import errno
-from scipy.interpolate import interp2d
-
 class Funtions:
 
     # CONSTRUCTOR
     def __init__(self):
         pass
 
-    # METODO PARA GENERAR PESOS
+    # METODO PARA BASES RADIALES
     def GenerarBasesRadiales(self, min, max, row, col):
         return np.random.uniform(min, max, [row, col])
 
-    # MEDOTO PARA OBTENER LA FUNCION SOMA
+    # MEDOTO PARA OBTENER LA DISTABCIA EUCLIDIANA
     def DistanciaEuclidiana(self, entradas, matrizBasesRadiales):
         distanciasEuclidianas = []
         for basesRadiales in matrizBasesRadiales:
@@ -29,7 +26,7 @@ class Funtions:
             distanciasEuclidianas.append(pow(sum(sumatoria), 0.5))
         return distanciasEuclidianas
 
-    # METODO PARA OBTENER LA FUNCION SIGMOIDE
+    # METODO PARA OBTENER LA FUNCION DE ACTIVACION BASE RADIAL
     def FuncionBaseRadial(self, matrizDistanciasEuclidianas):
         funcionesActivacion = []
         for distanciasEuclidianas in matrizDistanciasEuclidianas:
@@ -39,7 +36,7 @@ class Funtions:
             funcionesActivacion.append(funcionActivacion)
         return funcionesActivacion
 
-    # METODO PARA OBTENER LA FUNCION GAUSSIANA
+    # METODO PARA OBTENER LA FUNCION DE ACTIVACION GAUSSIANA
     def FuncionGaussiana(self, matrizDistanciasEuclidianas):
         funcionesActivacion = []
         for distanciasEuclidianas in matrizDistanciasEuclidianas:
@@ -49,7 +46,7 @@ class Funtions:
             funcionesActivacion.append(funcionActivacion)
         return funcionesActivacion
 
-    # METODO PARA OBTENER LA FUNCION TANGENTE HIPERBOLICA
+    # METODO PARA OBTENER LA FUNCION DE ACTIVACION MULTICUADRATICA
     def FuncionMulticuadratica(self, matrizDistanciasEuclidianas):
         funcionesActivacion = []
         for distanciasEuclidianas in matrizDistanciasEuclidianas:
@@ -59,7 +56,7 @@ class Funtions:
             funcionesActivacion.append(funcionActivacion)
         return funcionesActivacion
 
-    # METODO PARA OBTENER LA FUNCION GAUSSIANA
+    # METODO PARA OBTENER LA FUNCION DE ACTIVACION MULTICUADRATICA INVERSA
     def FuncionMulticuadraticaInversa(self, matrizDistanciasEuclidianas):
         funcionesActivacion = []
         for distanciasEuclidianas in matrizDistanciasEuclidianas:
@@ -69,6 +66,7 @@ class Funtions:
             funcionesActivacion.append(funcionActivacion)
         return funcionesActivacion
 
+    # METODO PARA CALCULAR LAS SALIDAS
     def CalcularSalida(self, funcionesActivacion, interp):
         salida = []
         for funcionActivacion in funcionesActivacion:
@@ -98,34 +96,12 @@ class Funtions:
             error.append(salida[0] - _salida)
         return (error, entrenamiento)
 
-    # METODO PARA OBTENER EL ERROR PATRON
+    # METODO PARA OBTENER EL ERROR G
     def ErrorG(self, errorLineal):
         error = 0
         for salida in errorLineal:
             error += np.abs(salida)
         return error / len(errorLineal)
-
-    def ActualizarPesos(self, pesos, entradas, error, rata):
-        for i in range(len(pesos)):
-            for j in range(len(pesos[0])):
-                pesos[i][j] += (entradas[i] * error[j] if isinstance(error, list) else error * rata)
-        return pesos
-
-    def ActualizarUmbrales(self, umbrales, error, rata):
-        for i in range(len(umbrales)):
-            umbrales[i] += (rata * error[i] if isinstance(error, list) else error * 1)
-        return umbrales
-    
-    def _ActualizarPesos(self, pesos, entradas, error, rata, rataDinamica, _pesos):
-        for i in range(len(pesos)):
-            for j in range(len(pesos[0])):
-                pesos[i][j] += (entradas[i] * error[j] if isinstance(error, list) else error * rata) + (rataDinamica * (pesos[i][j] - _pesos[i][j]))
-        return pesos
-
-    def _ActualizarUmbrales(self, umbrales, error, rata, rataDinamica, _umbrales):
-        for i in range(len(umbrales)):
-            umbrales[i] += (rata * error[i] if isinstance(error, list) else error * 1) + (rataDinamica * (umbrales[i] - _umbrales[i]))
-        return umbrales
 
     # METODO PARA LEER ARCHIVOS XLSX E INICIALIZAR LA CONFIGURACION DE LA NEURONA
     def Leer_Datos(self, ruta):
@@ -177,23 +153,3 @@ class Funtions:
             dfMatrix.to_excel(writer, sheet_name='Matriz', index=False)
             dfBasesRadiales.to_excel(writer, sheet_name='Bases Radiales', index=False)
             dfConfig.to_excel(writer, sheet_name='Config', index=False)
-            
-
-if __name__ == '__main__':
-    # fn = Funtions()
-    # (ejercicio, matrix, entradas, salidas, pesos, umbrales, config, funcionActivacion, delta) = fn.Leer_Datos(filedialog.askopenfilename())
-    # print(ejercicio, matrix, entradas, salidas, pesos, umbrales, config, funcionActivacion, delta)
-    # # print(np.zeros(3))
-    # # print(list(range(len([3,4,5]))))
-    # thislist = [1, 2, 3]
-    # xd = [4, 3]
-    # print(['W' + str(x+1) for x in thislist] + ['YD' + str(x+1) for x in xd])
-    # a = np.array([[1, 2], [3, 4]])
-    # b = np.array([[5], [6]])
-    # print(np.concatenate((a, b), axis=1))
-    x = [[1, -0.08, -0.16], [1, -0.08, -0.08], [1, 0.03, 0.34], [1, -0.16, -0.08]]
-    y = [[1], [1], [0], [0]]
-    print(np.linalg.lstsq(np.array(x), np.array(y), rcond=-1)[0])
-    x = [[ 1, -0.0866434, -0.16182117], [ 1, -0.0866434, -0.0866434 ], [ 1,  0.03220683, 0.3486618 ], [ 1, -0.16182117, -0.0866434 ]]
-    print(np.linalg.lstsq(np.array(x), np.array(y), rcond=-1)[0])
-    

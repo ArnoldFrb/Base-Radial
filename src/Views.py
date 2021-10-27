@@ -14,7 +14,7 @@ class Views:
 
     def __init__(self, window):
         self.wind = window
-        self.wind.title("PERCEPTRON MULTICAPA")
+        self.wind.title("BASE RADIAL")
         self.wind.resizable(0,0)
         self.wind.geometry("1100x600")
         self.wind.winfo_screenheight()

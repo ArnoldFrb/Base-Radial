@@ -148,8 +148,8 @@ class Funtions:
         if 'Config' in workbook.sheetnames:
             matrizBaseRadiales = pd.read_excel(ruta, sheet_name='Bases Radiales').to_numpy()
             funcionActivacion = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][0]
-            neuronas = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][1]
-            error = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][2]
+            neuronas = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][2]
+            error = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][1]
         
         return (ejercicio, matriz, np.array(entradas).transpose(), np.array(salidas).transpose(), matrizBaseRadiales, funcionActivacion, neuronas, error)
 

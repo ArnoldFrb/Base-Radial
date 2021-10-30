@@ -34,4 +34,4 @@ class Neuron:
 
         self.vsErrores.append([error_maximo, errorG])
 
-        return (errorG <= error_maximo, entrenamiento, self.vsErrores, DataFrame(matriz), errorG)
+        return (errorG <= error_maximo, entrenamiento, self.vsErrores, matriz, errorG)

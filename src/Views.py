@@ -1,10 +1,8 @@
-import random as rn
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter import filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
-from numpy import array
 from pandas.core.frame import DataFrame
 from Funtions import *
 from Neuron import Neuron
@@ -72,13 +70,18 @@ class Views:
         self.frameConfigSimulacion = tk.Frame(self.frameMain, width=450, height=249, background="#fafafa")
         self.frameConfigSimulacion.place(relx=.01, rely=.564)
 
-        tk.Label(self.frameConfigSimulacion, text="MATRIZ INTERPOLACION", bg="#fafafa").place(relx=.02, rely=.01)
+        tk.Label(self.frameConfigSimulacion, text="BASES RADIALES", bg="#fafafa").place(relx=.01, rely=.01)
 
-        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=219, background="#fafafa")
-        self.frameSimulacionMatriz_1.place(relx=0, rely=.12)
+        self.frameBasesRadiales = tk.Frame(self.frameConfigSimulacion, width=450, height=100, background="#fafafa")
+        self.frameBasesRadiales.place(relx=0, rely=.09)
 
-        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=219, background="#fafafa")
-        self.frameSimulacionMatriz_2.place(relx=.735, rely=.12)
+        tk.Label(self.frameConfigSimulacion, text="MATRIZ INTERPOLACION", bg="#fafafa").place(relx=.01, rely=.51)
+
+        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=100, background="#fafafa")
+        self.frameSimulacionMatriz_1.place(relx=0, rely=.6)
+
+        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=100, background="#fafafa")
+        self.frameSimulacionMatriz_2.place(relx=.735, rely=.6)
 
         self.frameEntrenar = tk.Frame(self.frameMain, width=620, height=50, background="#fafafa")
         self.frameEntrenar.place(relx=.426, rely=.02)
@@ -113,6 +116,14 @@ class Views:
         self.frameEntranamiento = tk.Frame(self.frameMain, width=620, height=228, background="#fafafa")
         self.frameEntranamiento.place(relx=.426, rely=.115)
 
+        self.frameEntranamientoGrafica = tk.Frame(self.frameEntranamiento, width=450, height=228, background="#fafafa")
+        self.frameEntranamientoGrafica.place(relx=0, rely=0)
+
+        tk.Label(self.frameEntranamiento, text="YD VS YR", bg="#fafafa").place(relx=.825, rely=.01)
+
+        self.frameEntranamientoTabla = tk.Frame(self.frameEntranamiento, width=161, height=205, background="#fafafa")
+        self.frameEntranamientoTabla.place(relx=.74, rely=.1)
+
         self.frameSimulacion = tk.Frame(self.frameMain, width=620, height=283, background="#fafafa")
         self.frameSimulacion.place(relx=.426, rely=.506)
 
@@ -142,12 +153,13 @@ class Views:
             self.btnEntrenar['state'] = tk.NORMAL
 
     def Event_btnInicializar(self):
-        self.entrenar.BasesRadiales = self.config.GenerarBasesRadiales(
-            self.entrenar.Entradas.min(),
-            self.entrenar.Entradas.max(),
-            int(self.entNeuronas.get()),
-            len(self.entrenar.Entradas[0])
-            )
+        self.entrenar.BasesRadiales = self.config.GenerarBasesRadiales(self.entrenar.Entradas.min(),
+            self.entrenar.Entradas.max(), int(self.entNeuronas.get()), len(self.entrenar.Entradas[0]))
+        
+        treeView = ttk.Treeview(self.frameBasesRadiales)
+        self.CrearGrid(treeView, self.frameBasesRadiales)
+        self.LlenarTabla(treeView, DataFrame(self.entrenar.BasesRadiales, columns=['X' + str(x+1) for x in range(len(self.entrenar.BasesRadiales[0]))]))
+        
         self.btnEntrenar['state'] = tk.NORMAL
         self.btnData['state'] = tk.DISABLED
         self.btnInicializar['state'] = tk.DISABLED
@@ -163,16 +175,21 @@ class Views:
 
         treeView = ttk.Treeview(self.frameSimulacionMatriz_1)
         self.CrearGrid(treeView, self.frameSimulacionMatriz_1)
-        self.LlenarTabla(treeView, interp)
+        self.LlenarTabla(treeView, DataFrame(interp, columns=['X0'] + ['FA' + str(i+1) for i in range(len(interp[0]) - 1)]))
 
         treeView = ttk.Treeview(self.frameSimulacionMatriz_2)
         self.CrearGrid(treeView, self.frameSimulacionMatriz_2)
-        self.LlenarTabla(treeView, DataFrame(self.entrenar.Salidas))
+        self.LlenarTabla(treeView, DataFrame(self.entrenar.Salidas, columns=['YD' + str(i+1) for i in range(len(self.entrenar.Salidas[0]))]))
 
         self.lblNeuronas.set('Neuronas: ' + str(len(self.entrenar.BasesRadiales)))
         self.lblErrorG.set('Error G: 0' + str(round(errorG, 7)))
 
-        self.Graficar(self.frameEntranamiento, entrenamiento)
+        self.Graficar(self.frameEntranamientoGrafica, entrenamiento)
+
+        treeView = ttk.Treeview(self.frameEntranamientoTabla)
+        self.CrearGrid(treeView, self.frameEntranamientoTabla)
+        self.LlenarTabla(treeView, pd.DataFrame(entrenamiento, columns=['YD', 'YR']))
+
         self.Graficar(self.frameSimulacion, vsErrores, False)
         
         self.barra.stop()
@@ -208,14 +225,20 @@ class Views:
         self.btnData['state'] = tk.NORMAL
         self.btnInicializar['state'] = tk.NORMAL
 
-        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=219, background="#fafafa")
-        self.frameSimulacionMatriz_1.place(relx=0, rely=.12)
+        self.frameBasesRadiales = tk.Frame(self.frameConfigSimulacion, width=450, height=100, background="#fafafa")
+        self.frameBasesRadiales.place(relx=0, rely=.09)
 
-        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=219, background="#fafafa")
-        self.frameSimulacionMatriz_2.place(relx=.735, rely=.12)
+        self.frameSimulacionMatriz_1 = tk.Frame(self.frameConfigSimulacion, width=320, height=100, background="#fafafa")
+        self.frameSimulacionMatriz_1.place(relx=0, rely=.6)
 
-        self.frameEntranamiento = tk.Frame(self.frameMain, width=620, height=228, background="#fafafa")
-        self.frameEntranamiento.place(relx=.426, rely=.115)
+        self.frameSimulacionMatriz_2 = tk.Frame(self.frameConfigSimulacion, width=119, height=100, background="#fafafa")
+        self.frameSimulacionMatriz_2.place(relx=.735, rely=.6)
+
+        self.frameEntranamientoGrafica = tk.Frame(self.frameEntranamiento, width=450, height=228, background="#fafafa")
+        self.frameEntranamientoGrafica.place(relx=0, rely=0)
+
+        self.frameEntranamientoTabla = tk.Frame(self.frameEntranamiento, width=161, height=205, background="#fafafa")
+        self.frameEntranamientoTabla.place(relx=.74, rely=.1)
 
         self.frameSimulacion = tk.Frame(self.frameMain, width=620, height=283, background="#fafafa")
         self.frameSimulacion.place(relx=.426, rely=.506)

@@ -67,7 +67,7 @@ class Funtions:
         return funcionesActivacion
 
     # METODO PARA CALCULAR LAS SALIDAS
-    def CalcularSalida(self, funcionesActivacion, interp):
+    def EcuacionBaseRadial(self, funcionesActivacion, interp):
         salida = []
         for funcionActivacion in funcionesActivacion:
             sumatoria = []
@@ -118,7 +118,7 @@ class Funtions:
 
         matrizBaseRadiales = []
         funcionActivacion = 'BASERADIAL'
-        neuronas = int(uniform(1, 9))
+        neuronas = 1
         error = 0.001
 
         if 'Config' in workbook.sheetnames:
@@ -153,3 +153,6 @@ class Funtions:
             dfMatrix.to_excel(writer, sheet_name='Matriz', index=False)
             dfBasesRadiales.to_excel(writer, sheet_name='Bases Radiales', index=False)
             dfConfig.to_excel(writer, sheet_name='Config', index=False)
+            
+if __name__ == '__main__':
+    print(np.ones((4, 1)))

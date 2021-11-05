@@ -166,7 +166,7 @@ class Views:
 
     def Event_btnEntrenar(self):
 
-        self.barra.start()
+        self.barra.start(2)
         self.btnData['state'] = tk.DISABLED
         self.btnEntrenar['state'] = tk.DISABLED
         self.btnLimpiar['state'] = tk.DISABLED
@@ -210,9 +210,10 @@ class Views:
 
     def Event_btnGuardar(self):
         if MessageBox.askokcancel("Entramiento Exitoso.", "¿Desea guardar el entrenamiento?"):
-            self.config.GuardarResultados(self.entrenar.Ejercicio, 'out', self.entrenar.Entradas, self.entrenar.Salidas, 
-                                    self.entrenar.BasesRadiales, self.cobBoxFuncionSalida.get(), self.entErrorMaximo.get(), self.entNeuronas.get()
-                                )
+            self.config.GuardarResultados(
+                self.entrenar.Ejercicio, 'out', self.entrenar.Entradas, self.entrenar.Salidas, self.entrenar.BasesRadiales,
+                self.cobBoxFuncionSalida.get(), self.entErrorMaximo.get(), self.entNeuronas.get()
+            )
             MessageBox.showinfo('EXITO!', 'Se ha guardado el entranmiento sastifactoriamente.')
         
         self.btnGuardar['state'] = tk.DISABLED
@@ -220,7 +221,7 @@ class Views:
     def Event_btnLimpiar(self):
         self.btnGuardar['state'] = tk.DISABLED
         self.entrenar.BasesRadiales = []
-        self.entrenar.vsErrores = [[0.1, 0.1]]
+        self.entrenar.vsErrores = []
         self.btnLimpiar['state'] = tk.DISABLED
         self.btnData['state'] = tk.NORMAL
         self.btnInicializar['state'] = tk.NORMAL
@@ -263,10 +264,11 @@ class Views:
 
     def Graficar(self, frame, data, flag=True):
         fig = Figure(figsize=(5, 4), dpi=100)
-        if flag:
-            fig.add_subplot(111).plot([fila[0] for fila in data], 'o', [fila[1] for fila in data], '^')
-        else:
-            fig.add_subplot(111).plot([fila[0] for fila in data], '-',  [fila[1] for fila in data], '--')
+        axis = fig.add_subplot(111)
+        rep = ['o', '^'] if flag or len(data) == 1 else ['-', '--']
+        labels = ['YD','YR'] if flag else ['Error Op.','Error G.']
+        handles = axis.plot([fila[0] for fila in data], rep[0], [fila[1] for fila in data], rep[1])
+        fig.legend(handles, labels)
 
         canvas = FigureCanvasTkAgg(fig, master=frame)
         canvas.draw()

@@ -266,7 +266,7 @@ class Views:
         fig = Figure(figsize=(5, 4), dpi=100)
         axis = fig.add_subplot(111)
         rep = ['o', '^'] if flag or len(data) == 1 else ['-', '--']
-        labels = ['YD','YR'] if flag else ['Error Op.','Error G.']
+        labels = ['YD','YR'] if flag else ['Error Op.','Error Ge.']
         handles = axis.plot([fila[0] for fila in data], rep[0], [fila[1] for fila in data], rep[1])
         fig.legend(handles, labels)
 

@@ -1,8 +1,9 @@
 
-from random import uniform
+from skimage.io import imread
+from skimage.util import crop
 from math import exp, log, sqrt
+from shutil import copy
 import numpy as np
-import openpyxl
 import pandas as pd
 import os
 import errno
@@ -104,53 +105,68 @@ class Funtions:
         return error / len(errorLineal)
 
     # METODO PARA LEER ARCHIVOS XLSX E INICIALIZAR LA CONFIGURACION DE LA NEURONA
-    def Leer_Datos(self, ruta):
+    def Leer_Datos(self, ruta_img, ruta_arc = 'E:/WORLD/PYTHOM/AraneaeIA/src/data/Araneae.xlsx'):
+        img = imread(ruta_img, as_gray=True)
+        if img.shape[1] < 800:
+            return (False, None, None, None, None, None, None, None, None)
+        a = img.shape[1]-800
+        img = crop(img, ((0, 0), (int(a/2), a - int(a/2))), copy=False)
+        array_img = np.apply_along_axis(sum, 0, img)
+
         entradas = []
         salidas = []
 
-        ejercicio = os.path.basename(os.path.splitext(ruta)[0])
-
-        workbook = openpyxl.load_workbook(ruta)
-
-        matriz = pd.read_excel(ruta, sheet_name='Matriz')
-        for i in range(len(matriz.columns)):
-            entradas.append([fila[i] for fila in matriz.to_numpy()]) if 'X' in matriz.columns[i] else salidas.append([fila[i] for fila in matriz.to_numpy()])
-
         matrizBaseRadiales = []
         funcionActivacion = 'BASERADIAL'
-        neuronas = 1
+        neuronas = len(array_img)
         error = 0.001
+        arañas = []
 
-        if 'Config' in workbook.sheetnames:
-            matrizBaseRadiales = pd.read_excel(ruta, sheet_name='Bases Radiales').to_numpy()
-            funcionActivacion = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][0]
-            neuronas = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][2]
-            error = pd.read_excel(ruta, sheet_name='Config').to_numpy()[0][1]
+        ruta_img = [ruta_img, os.path.basename(os.path.splitext(ruta_img)[0]), os.path.basename(os.path.splitext(ruta_img)[1])]
+
+        if os.path.exists(ruta_arc):
+            matriz = pd.read_excel(ruta_arc, sheet_name='Matriz')
+            aux_salidas = np.array([[row[len(matriz.columns) - 1]] for row in matriz.to_numpy()])
+            aux_entradas = np.delete(matriz.to_numpy(), len(matriz.columns) - 1, axis=1)
+
+            for e, s in zip(aux_entradas, aux_salidas):
+                entradas.append(e)
+                salidas.append(s)
+
+            if array_img in np.array(entradas):                
+                return (False, None, None, None, None, None, None, None, None)
+
+            entradas.append(array_img)
+            salidas.append([len(salidas) + 1])
+
+            matrizBaseRadiales = pd.read_excel(ruta_arc, sheet_name='Bases Radiales').to_numpy()
+            arañas = pd.read_excel(ruta_arc, sheet_name='Araneae').to_numpy().tolist()
+            funcionActivacion = pd.read_excel(ruta_arc, sheet_name='Config').to_numpy()[0][0]
+            neuronas = pd.read_excel(ruta_arc, sheet_name='Config').to_numpy()[0][2]
+            error = pd.read_excel(ruta_arc, sheet_name='Config').to_numpy()[0][1]
+
+        else:
+            entradas.append(array_img)
+            salidas.append([1])
         
-        return (ejercicio, matriz, np.array(entradas).transpose(), np.array(salidas).transpose(), matrizBaseRadiales, funcionActivacion, neuronas, error)
+        return (True, ruta_img, np.array(entradas), np.array(salidas), arañas, matrizBaseRadiales, funcionActivacion, neuronas, error)
 
-    def GuardarResultados(self, ejercicio, entrenamiento, entradas, salidas, basesRadiales, funcionSalida, error, neuronas):
+    def GuardarResultados(self, arañas, entradas, salidas, basesRadiales, funcionSalida, error, neuronas):
         
         dfMatrix = pd.DataFrame(np.concatenate((np.array(entradas), np.array(salidas)), axis=1), columns=['X' + str(x+1) for x in range(len(entradas[0]))] + ['YD' + str(x+1) for x in range(len(salidas[0]))])
+        dfArañas = pd.DataFrame(np.array(arañas), columns=['Codigo', 'Aranea', 'ruta'])
         dfBasesRadiales = pd.DataFrame(basesRadiales, columns=['BR' + str(x+1) for x in range(len(basesRadiales[0]))])
         dfConfig = pd.DataFrame([[funcionSalida, error, neuronas]], columns=['Func Activacion', 'Error Maximo', 'Neuronas'])
 
         try:
-            os.mkdir('src/DATA/' + entrenamiento)
+            os.mkdir('src/data')
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
 
-        try:
-            os.mkdir('src/DATA/'+ entrenamiento +'/' + funcionSalida)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
-
-        raiz = 'src/DATA/'+ entrenamiento +'/' + funcionSalida + '/' + ejercicio + '.xlsx' if 'out' == entrenamiento else 'src/DATA/'+ entrenamiento +'/' + funcionSalida + '/' + ejercicio + ' - ' + error + '.xlsx'
-
-        with pd.ExcelWriter(raiz) as writer: # pylint: disable=abstract-class-instantiated
+        with pd.ExcelWriter('src/data/Araneae.xlsx') as writer: # pylint: disable=abstract-class-instantiated
             dfMatrix.to_excel(writer, sheet_name='Matriz', index=False)
+            dfArañas.to_excel(writer, sheet_name='Araneae', index=False)
             dfBasesRadiales.to_excel(writer, sheet_name='Bases Radiales', index=False)
             dfConfig.to_excel(writer, sheet_name='Config', index=False)
             

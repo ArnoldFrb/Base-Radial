@@ -1,8 +1,9 @@
 import tkinter as tk
 import tkinter.ttk as ttk
-from tkinter import filedialog
+from tkinter import PhotoImage, filedialog
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
+from uuid import uuid4
 from pandas.core.frame import DataFrame
 from Funtions import *
 from Neuron import Neuron
@@ -17,9 +18,10 @@ class Views:
         self.wind.geometry("1100x600")
         self.wind.winfo_screenheight()
         self.wind.winfo_screenwidth()
-        self.capas = []
-        self.capa = 1
+        self.ruta_img = ''
         self.config = Funtions()
+        self.arañas = []
+
 
         self.frameMain = tk.Frame(master=self.wind, width=1100, height=600, background="#e3e3e3")
         self.frameMain.place(relx=.0, rely=.0)
@@ -129,40 +131,61 @@ class Views:
 
     def Event_btnData(self):
         
-        (ejercicio, matrix, entradas, salidas, basesRadiales, funcionActivacion, neuronas, error) = self.config.Leer_Datos(filedialog.askopenfilename())
-
-        self.entErrorMaximo.delete(0, tk.END)
-        self.entErrorMaximo.insert(0, error)
-        self.entNeuronas.delete(0, tk.END)
-        self.entNeuronas.insert(0, neuronas)
-        self.cobBoxFuncionSalida.delete(0, tk.END)
-        self.cobBoxFuncionSalida.insert(0, funcionActivacion)
-
-        treeView = ttk.Treeview(self.frameData)
-        self.CrearGrid(treeView, self.frameData)
-        self.LlenarTabla(treeView, matrix)
-
-        tk.Label(self.frameConfigInicial, text=str(len(entradas[0])), bg="#fafafa").place(relx=.15, rely=.35)
-        tk.Label(self.frameConfigInicial, text=str(len(salidas[0])), bg="#fafafa").place(relx=.323, rely=.35)
-        tk.Label(self.frameConfigInicial, text=str(len(matrix)), bg="#fafafa").place(relx=.54, rely=.35)
-
-        self.entrenar = Neuron(ejercicio, entradas, salidas, basesRadiales)
-        if len(basesRadiales) == 0:
-            self.btnInicializar['state'] = tk.NORMAL
+        self.barra.start(2)
+        (flag, ruta_img, entradas, salidas, arañas, basesRadiales, funcionActivacion, neuronas, error) = self.config.Leer_Datos(filedialog.askopenfilename())
+        
+        if not flag:
+            MessageBox.showinfo('Error!!!', 'La Imagen no cumple con los parametros de entrenamiento o ya se le realizo un entrenamiento.')
         else:
-            self.btnEntrenar['state'] = tk.NORMAL
+            self.ruta_img = ruta_img
+            self.arañas = arañas
+            self.entErrorMaximo.delete(0, tk.END)
+            self.entErrorMaximo.insert(0, error)
+            self.entNeuronas.delete(0, tk.END)
+            self.entNeuronas.insert(0, neuronas)
+            self.cobBoxFuncionSalida.delete(0, tk.END)
+            self.cobBoxFuncionSalida.insert(0, funcionActivacion)
+
+            can = tk.Canvas(self.frameData)
+            can.pack(fill='both')
+            can.create_image(20, 20, image=PhotoImage(ruta_img[0]), anchor='nw')
+
+            # tk.Label(self.frameData, width=450, height=194, image=ImageTk.PhotoImage(Image.open(ruta_img).resize((25, 25)))).pack()
+
+            # treeView = ttk.Treeview(self.frameData)
+            # self.CrearGrid(treeView, self.frameData)
+            # self.LlenarTabla(treeView, matrix)
+
+            tk.Label(self.frameConfigInicial, text=str(len(entradas[0])), bg="#fafafa").place(relx=.15, rely=.35)
+            tk.Label(self.frameConfigInicial, text=str(len(salidas[0])), bg="#fafafa").place(relx=.323, rely=.35)
+            tk.Label(self.frameConfigInicial, text=str(len(entradas)), bg="#fafafa").place(relx=.54, rely=.35)
+
+            self.entrenar = Neuron('ejercicio', entradas, salidas, basesRadiales)
+            if len(basesRadiales) == 0:
+                self.btnInicializar['state'] = tk.NORMAL
+            else:
+                self.btnEntrenar['state'] = tk.NORMAL
+
+        self.barra.stop()
 
     def Event_btnInicializar(self):
+        self.barra.start(2)
+        if int(self.entNeuronas.get()) < len(self.entrenar.Entradas[0]):
+            MessageBox.showinfo('AVERTENCIA!!!', 'Los Centros Radiales no deben ser menor a las Entradas.')
+            return
+
         self.entrenar.BasesRadiales = self.config.GenerarBasesRadiales(self.entrenar.Entradas.min(),
             self.entrenar.Entradas.max(), int(self.entNeuronas.get()), len(self.entrenar.Entradas[0]))
         
-        treeView = ttk.Treeview(self.frameBasesRadiales)
-        self.CrearGrid(treeView, self.frameBasesRadiales)
-        self.LlenarTabla(treeView, DataFrame(self.entrenar.BasesRadiales, columns=['X' + str(x+1) for x in range(len(self.entrenar.BasesRadiales[0]))]))
+        # treeView = ttk.Treeview(self.frameBasesRadiales)
+        # self.CrearGrid(treeView, self.frameBasesRadiales)
+        # self.LlenarTabla(treeView, DataFrame(self.entrenar.BasesRadiales, columns=['X' + str(x+1) for x in range(len(self.entrenar.BasesRadiales[0]))]))
         
         self.btnEntrenar['state'] = tk.NORMAL
         self.btnData['state'] = tk.DISABLED
         self.btnInicializar['state'] = tk.DISABLED
+
+        self.barra.stop()
 
     def Event_btnEntrenar(self):
 
@@ -173,22 +196,22 @@ class Views:
 
         (flag, entrenamiento, vsErrores, interp, errorG) = self.entrenar.Entrenar(float(self.entErrorMaximo.get()), self.cobBoxFuncionSalida.get())
 
-        treeView = ttk.Treeview(self.frameSimulacionMatriz_1)
-        self.CrearGrid(treeView, self.frameSimulacionMatriz_1)
-        self.LlenarTabla(treeView, DataFrame(interp, columns=['X0'] + ['FA' + str(i+1) for i in range(len(interp[0]) - 1)]))
+        # treeView = ttk.Treeview(self.frameSimulacionMatriz_1)
+        # self.CrearGrid(treeView, self.frameSimulacionMatriz_1)
+        # self.LlenarTabla(treeView, DataFrame(interp, columns=['X0'] + ['FA' + str(i+1) for i in range(len(interp[0]) - 1)]))
 
-        treeView = ttk.Treeview(self.frameSimulacionMatriz_2)
-        self.CrearGrid(treeView, self.frameSimulacionMatriz_2)
-        self.LlenarTabla(treeView, DataFrame(self.entrenar.Salidas, columns=['YD' + str(i+1) for i in range(len(self.entrenar.Salidas[0]))]))
+        # treeView = ttk.Treeview(self.frameSimulacionMatriz_2)
+        # self.CrearGrid(treeView, self.frameSimulacionMatriz_2)
+        # self.LlenarTabla(treeView, DataFrame(self.entrenar.Salidas, columns=['YD' + str(i+1) for i in range(len(self.entrenar.Salidas[0]))]))
 
         self.lblNeuronas.set('Neuronas: ' + str(len(self.entrenar.BasesRadiales)))
         self.lblErrorG.set('Error G: 0' + str(round(errorG, 7)))
 
         self.Graficar(self.frameEntranamientoGrafica, entrenamiento)
 
-        treeView = ttk.Treeview(self.frameEntranamientoTabla)
-        self.CrearGrid(treeView, self.frameEntranamientoTabla)
-        self.LlenarTabla(treeView, pd.DataFrame(entrenamiento, columns=['YD', 'YR']))
+        # treeView = ttk.Treeview(self.frameEntranamientoTabla)
+        # self.CrearGrid(treeView, self.frameEntranamientoTabla)
+        # self.LlenarTabla(treeView, pd.DataFrame(entrenamiento, columns=['YD', 'YR']))
 
         self.Graficar(self.frameSimulacion, vsErrores, False)
         
@@ -209,14 +232,21 @@ class Views:
         self.btnLimpiar['state'] = tk.NORMAL
 
     def Event_btnGuardar(self):
-        if MessageBox.askokcancel("Entramiento Exitoso.", "¿Desea guardar el entrenamiento?"):
+        self.barra.start(2)
+        self.Modal()
+        self.barra.stop()
+
+    def Event_btnConfirmar(self):
+        if MessageBox.askokcancel("CONFITMACION!!!.", "¿Esta seguro de guardar la nueva araña ?"):
+            ruta = 'src/data/img/' + str(uuid4())+self.ruta_img[2]
+            copy(self.ruta_img[0], ruta)
+            self.arañas.append([self.entrenar.Salidas[len(self.entrenar.Salidas)-1, 0], self.ent_nombre_araña.get(), ruta])
             self.config.GuardarResultados(
-                self.entrenar.Ejercicio, 'out', self.entrenar.Entradas, self.entrenar.Salidas, self.entrenar.BasesRadiales,
+                self.arañas, self.entrenar.Entradas, self.entrenar.Salidas, self.entrenar.BasesRadiales,
                 self.cobBoxFuncionSalida.get(), self.entErrorMaximo.get(), self.entNeuronas.get()
             )
             MessageBox.showinfo('EXITO!', 'Se ha guardado el entranmiento sastifactoriamente.')
-        
-        self.btnGuardar['state'] = tk.DISABLED
+            self.btnGuardar['state'] = tk.DISABLED
 
     def Event_btnLimpiar(self):
         self.btnGuardar['state'] = tk.DISABLED
@@ -273,6 +303,25 @@ class Views:
         canvas = FigureCanvasTkAgg(fig, master=frame)
         canvas.draw()
         canvas.get_tk_widget().place(relwidth=1, relheight=1)
+
+    def Modal(self):
+        pop = tk.Toplevel(self.wind)
+        pop.title("GUARDAR ARAÑA.")
+        pop.geometry("350x150")
+        pop.config(bg="#e3e3e3")
+        # Add a Frame
+        frame = tk.Frame(pop, bg="#fafafa", width=350, height=150)
+        frame.place(relx=0, rely=0)
+        # Entry
+        tk.Label(frame, bg="#fafafa", text='NOMBRE DE LA NUEVA ARAÑA').place(relx=.225, rely=.18)
+        self.ent_nombre_araña = ttk.Combobox(frame)
+        self.ent_nombre_araña["values"] = [ col[1] for col in self.arañas]
+        self.ent_nombre_araña.place(relx=.225, rely=.3)
+        self.ent_nombre_araña.insert(0, 'Ingrese nombre de araña')
+        
+        # Button
+        tk.Button(frame, text="Cargar", state=tk.NORMAL, command=self.Event_btnConfirmar,
+            relief="flat", overrelief="flat", bg="#e3e3e3", borderwidth=2).place(relx=.4, rely=.5)
 
 if __name__ == '__main__':
     winw = tk.Tk()
